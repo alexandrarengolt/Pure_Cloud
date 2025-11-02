@@ -70,25 +70,25 @@ exports.getFiles = async (req, res) => {
 exports.uploadMiddleware = upload;
 
 
-// удаление файла
+//удаление файла
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
     
-    // yаходим файл в БД
+    //yаходим файл в БД
     const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    // Удаляем файл из Yandex Cloud
+    //удаляем файл из Yandex Cloud
     const s3 = require('../config/s3');
     await s3.deleteObject({
       Bucket: file.bucket,
       Key: file.file_key
     }).promise();
 
-    // удаляем файл из Supabase
+    //удаляем файл из Supabase
     const supabase = require('../config/supabase');
     const { error } = await supabase
       .from('files')
@@ -107,6 +107,40 @@ exports.deleteFile = async (req, res) => {
     res.status(200).json({ message: 'Файл успешно удален' });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+//скачивание файла
+exports.downloadFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    //находим файл в БД
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+
+    //генерируем signed URL для скачивания
+    const s3 = require('../config/s3');
+    const signedUrl = await s3.getSignedUrlPromise('getObject', {
+      Bucket: file.bucket,
+      Key: file.file_key,
+      Expires: 3600 //действует 1 час
+    });
+
+    res.json({
+      message: 'Ссылка для скачивания готова',
+      downloadUrl: signedUrl,
+      file: {
+        id: file.id,
+        filename: file.filename,
+        size: file.size
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка скачивания:', error);
+    res.status(500).json({ error: 'Ошибка при скачивании файла' });
   }
 };
 
