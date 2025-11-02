@@ -13,6 +13,3 @@ module.exports = router;
 
 // удаление файла
 router.delete('/files/:id', fileController.deleteFile);
-
-// скачивание файла
-router.get('/files/:id/download', fileController.downloadFile);
