@@ -19,7 +19,7 @@ router.delete('/api/:id', async (req, res) => {
     const { id } = req.params;
 
     await deleteFile(id);
-    res.status(200).json({ message: 'File deleted successfully' });
+    res.status(200).json({ message: 'Файл успешно удален' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
