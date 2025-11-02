@@ -10,3 +10,6 @@ router.get('/test', (req, res) => {
 });
 
 module.exports = router;
+
+// Удаление файла
+router.delete('/files/:id', fileController.deleteFile);
