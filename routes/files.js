@@ -9,7 +9,7 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Файловые маршруты работают!' });
 });
 
-module.exports = router;
+module.exports = router;6
 
 // удаление файла
 router.delete('/files/:id', fileController.deleteFile);
