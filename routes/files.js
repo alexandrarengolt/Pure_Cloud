@@ -11,5 +11,8 @@ router.get('/test', (req, res) => {
 
 module.exports = router;
 
-// Удаление файла
+// удаление файла
 router.delete('/files/:id', fileController.deleteFile);
+
+// скачивание файла
+router.get('/files/:id/download', fileController.downloadFile);

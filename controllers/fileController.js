@@ -70,25 +70,25 @@ exports.getFiles = async (req, res) => {
 exports.uploadMiddleware = upload;
 
 
-// Удаление файла
+// удаление файла
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
     
-    // 1. Находим файл в БД
+    // yаходим файл в БД
     const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    // 2. Удаляем файл из Yandex Cloud
+    // Удаляем файл из Yandex Cloud
     const s3 = require('../config/s3');
     await s3.deleteObject({
       Bucket: file.bucket,
       Key: file.file_key
     }).promise();
 
-    // 3. Удаляем запись из Supabase
+    // удаляем файл из Supabase
     const supabase = require('../config/supabase');
     const { error } = await supabase
       .from('files')
@@ -109,3 +109,5 @@ exports.deleteFile = async (req, res) => {
     res.status(500).json({ error: 'Ошибка при удалении файла' });
   }
 };
+
+
