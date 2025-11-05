@@ -110,38 +110,38 @@ exports.deleteFile = async (req, res) => {
   }
 };
 
-//скачивание файла
-exports.downloadFile = async (req, res) => {
-  try {
-    const fileId = req.params.id;
+// //скачивание файла
+// exports.downloadFile = async (req, res) => {
+//   try {
+//     const fileId = req.params.id;
     
-    //находим файл в БД
-    const file = await File.findById(fileId);
-    if (!file) {
-      return res.status(404).json({ error: 'Файл не найден' });
-    }
+//     //находим файл в БД
+//     const file = await File.findById(fileId);
+//     if (!file) {
+//       return res.status(404).json({ error: 'Файл не найден' });
+//     }
 
-    //генерируем signed URL для скачивания
-    const s3 = require('../config/s3');
-    const signedUrl = await s3.getSignedUrlPromise('getObject', {
-      Bucket: file.bucket,
-      Key: file.file_key,
-      Expires: 3600 //действует 1 час
-    });
+//     //генерируем signed URL для скачивания
+//     const s3 = require('../config/s3');
+//     const signedUrl = await s3.getSignedUrlPromise('getObject', {
+//       Bucket: file.bucket,
+//       Key: file.file_key,
+//       Expires: 3600 //действует 1 час
+//     });
 
-    res.json({
-      message: 'Ссылка для скачивания готова',
-      downloadUrl: signedUrl,
-      file: {
-        id: file.id,
-        filename: file.filename,
-        size: file.size
-      }
-    });
-  } catch (error) {
-    console.error('Ошибка скачивания:', error);
-    res.status(500).json({ error: 'Ошибка при скачивании файла' });
-  }
-};
+//     res.json({
+//       message: 'Ссылка для скачивания готова',
+//       downloadUrl: signedUrl,
+//       file: {
+//         id: file.id,
+//         filename: file.filename,
+//         size: file.size
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Ошибка скачивания:', error);
+//     res.status(500).json({ error: 'Ошибка при скачивании файла' });
+//   }
+// };
 
 
