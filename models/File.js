@@ -8,11 +8,11 @@ class File {
         .insert([
           {
             filename: fileData.filename,
-            original_name: fileData.originalName,
+            original_name: fileData.originalName, 
             size: fileData.size,
             mimetype: fileData.mimetype,
             bucket: fileData.bucket,
-            file_key: fileData.fileKey
+            file_key: fileData.fileKey 
           }
         ])
         .select()
@@ -34,7 +34,17 @@ class File {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      return data.map(file => ({
+        id: file.id,
+        filename: file.filename,
+        originalName: file.original_name,
+        size: file.size,
+        mimetype: file.mimetype,
+        bucket: file.bucket,
+        fileKey: file.file_key, 
+        created_at: file.created_at
+      }));
     } catch (error) {
       console.error('Ошибка получения файлов:', error);
       throw error;
@@ -50,9 +60,36 @@ class File {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      if (!data) return null;
+      
+      return {
+        id: data.id,
+        filename: data.filename,
+        originalName: data.original_name, 
+        size: data.size,
+        mimetype: data.mimetype,
+        bucket: data.bucket,
+        fileKey: data.file_key, 
+        created_at: data.created_at
+      };
     } catch (error) {
       console.error('Ошибка поиска файла:', error);
+      throw error;
+    }
+  }
+
+  static async deleteById(id) {
+    try {
+      const { error } = await supabase
+        .from('files')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Ошибка удаления файла:', error);
       throw error;
     }
   }
