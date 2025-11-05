@@ -12,7 +12,6 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Файловые маршруты работают!' });
 });
 
-
 //удаление файла -
 router.delete('/files/:id', fileController.deleteFile);
 
