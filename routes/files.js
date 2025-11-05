@@ -4,6 +4,9 @@ const fileController = require('../controllers/fileController');
 
 router.post('/upload', fileController.uploadMiddleware, fileController.uploadFile);
 
+//скачивание файла
+router.get('/files/:id/download', fileController.downloadFile);
+
 router.get('/files', fileController.getFiles);
 router.get('/test', (req, res) => {
   res.json({ message: 'Файловые маршруты работают!' });
@@ -27,5 +30,4 @@ router.delete('/api/:id', async (req, res) => {
 module.exports = router; 
 
 
-//скачивание файла
-router.get('/files/:id/download', fileController.downloadFile);
+
