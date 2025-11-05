@@ -69,34 +69,36 @@ exports.getFiles = async (req, res) => {
 
 
 // скачивание файла
-exports.downloadFile = async (req, res) => {
+exports.directDownload = async (req, res) => {
   try {
     const fileId = req.params.id;
     
-    // Находим файл в БД
     const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    //генерируем signed URL для скачивания
-    const signedUrl = await s3.getSignedUrlPromise('getObject', {
+    //получаем файл из S3
+    const s3Object = await s3.getObject({
       Bucket: file.bucket,
-      Key: file.fileKey,
-      Expires: 3600 // 1 час
-    });
+      Key: file.fileKey
+    }).promise();
 
-    res.json({
-      message: 'Ссылка для скачивания готова',
-      downloadUrl: signedUrl,
-      file: {
-        id: file.id,
-        filename: file.filename,
-        size: file.size
-      }
-    });
+    //устанавливаем заголовки для скачивания
+    res.setHeader('Content-Type', file.mimetype);
+    res.setHeader('Content-Length', file.size);
+    res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    res.send(s3Object.Body);
+
   } catch (error) {
-    console.error('Ошибка скачивания:', error);
+    console.error('Ошибка прямого скачивания:', error);
+    
+    if (error.code === 'NoSuchKey') {
+      return res.status(404).json({ error: 'Файл не найден в хранилище' });
+    }
+    
     res.status(500).json({ error: 'Ошибка при скачивании файла' });
   }
 };
