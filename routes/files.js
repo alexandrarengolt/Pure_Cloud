@@ -9,6 +9,7 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Файловые маршруты работают!' });
 });
 
+
 //удаление файла -
 router.delete('/files/:id', fileController.deleteFile);
 
@@ -24,6 +25,7 @@ router.delete('/api/:id', async (req, res) => {
 });
 
 module.exports = router; 
+
 
 //скачивание файла
 router.get('/files/:id/download', fileController.downloadFile);
