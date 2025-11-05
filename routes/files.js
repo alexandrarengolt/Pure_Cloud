@@ -13,6 +13,8 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Файловые маршруты работают!' });
 });
 
+router.get('/files/:id/debug-fields', fileController.debugFieldConversion);
+
 //удаление файла -
 router.delete('/files/:id', fileController.deleteFile);
 

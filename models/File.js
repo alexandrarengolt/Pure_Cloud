@@ -8,11 +8,11 @@ class File {
         .insert([
           {
             filename: fileData.filename,
-            original_name: fileData.original_name,
+            original_name: fileData.originalName,
             size: fileData.size,
             mimetype: fileData.mimetype,
             bucket: fileData.bucket,
-            file_key: fileData.file_key
+            file_key: fileData.fileKey
           }
         ])
         .select()
@@ -40,22 +40,70 @@ class File {
       throw error;
     }
   }
-
   static async findById(id) {
-    try {
-      const { data, error } = await supabase
-        .from('files')
-        .select('*')
-        .eq('id', id)
-        .single();
+  try {
+    console.log('🔍 ПОИСК ФАЙЛА ПО ID:', id);
+    
+    const { data, error } = await supabase
+      .from('files')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Ошибка поиска файла:', error);
+    if (error) {
+      console.error('❌ Ошибка Supabase:', error);
       throw error;
     }
+    
+    if (!data) {
+      console.log('❌ Файл не найден в БД');
+      return null;
+    }
+
+    console.log('✅ ФАЙЛ НАЙДЕН В БД:', {
+      id: data.id,
+      file_key: data.file_key,
+      bucket: data.bucket
+    });
+    
+    // ИСПРАВЛЕННОЕ преобразование - используем fileKey вместо file_key
+    const result = {
+      id: data.id,
+      filename: data.filename,
+      originalName: data.original_name, // snake_case -> camelCase
+      size: data.size,
+      mimetype: data.mimetype,
+      bucket: data.bucket,
+      fileKey: data.file_key, // ВАЖНО: file_key -> fileKey (camelCase)
+      created_at: data.created_at
+    };
+    
+    console.log('🔄 ПРЕОБРАЗОВАННЫЕ ДАННЫЕ:', {
+      fileKey: result.fileKey // должно быть files/1762346/06459-photo_2025-08-03_20-20-12.jpg
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Ошибка поиска файла:', error);
+    throw error;
   }
+}
+
+//   static async findById(id) {
+//     try {
+//       const { data, error } = await supabase
+//         .from('files')
+//         .select('*')
+//         .eq('id', id)
+//         .single();
+
+//       if (error) throw error;
+//       return data;
+//     } catch (error) {
+//       console.error('Ошибка поиска файла:', error);
+//       throw error;
+//     }
+//   }
 }
 
 module.exports = File;

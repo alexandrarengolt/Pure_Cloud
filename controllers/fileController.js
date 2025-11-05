@@ -108,34 +108,107 @@ exports.directDownload = async (req, res) => {
   try {
     const fileId = req.params.id;
     
+    // Получаем файл через модель
     const file = await File.findById(fileId);
     if (!file) {
-      return res.status(404).json({ error: 'Файл не найден' });
+      return res.status(404).json({ error: 'Файл не найден в БД' });
     }
 
-    // Получаем файл из S3
-    const s3Object = await s3.getObject({
+    // console.log('ДАННЫЕ ИЗ МОДЕЛИ File.findById:');
+    // console.log('file объект:', JSON.stringify(file, null, 2));
+    // console.log('fileKey значение:', file.fileKey);
+    // console.log('fileKey тип:', typeof file.fileKey);
+    // console.log('fileKey существует?:', !!file.fileKey);
+
+    // ДЕТАЛЬНАЯ ПРОВЕРКА КАЖДОГО ПОЛЯ
+    if (!file.fileKey) {
+      console.log('fileKey отсутствует в объекте');
+      return res.status(500).json({ 
+        error: 'Отсутствует fileKey',
+        file_data: file
+      });
+    }
+
+    if (!file.bucket) {
+      console.log('bucket отсутствует');
+      return res.status(500).json({ 
+        error: 'Отсутствует bucket',
+        file_data: file
+      });
+    }
+
+    // ПОДГОТОВКА ПАРАМЕТРОВ ДЛЯ S3
+    const s3Params = {
       Bucket: file.bucket,
       Key: file.fileKey
-    }).promise();
+    };
 
-    // Устанавливаем заголовки для скачивания
-    res.setHeader('Content-Type', file.mimetype);
+    console.log('ПАРАМЕТРЫ ДЛЯ S3.getObject:');
+    console.log('s3Params объект:', JSON.stringify(s3Params, null, 2));
+    console.log('Bucket:', s3Params.Bucket);
+    console.log('Key:', s3Params.Key);
+    console.log('Key тип:', typeof s3Params.Key);
+    console.log('Key длина:', s3Params.Key ? s3Params.Key.length : 0);
+
+    // Проверим, что Key не пустой
+    if (!s3Params.Key || s3Params.Key.trim() === '') {
+      console.log('КРИТИЧЕСКАЯ ОШИБКА: Key пустой в s3Params');
+      return res.status(500).json({
+        error: 'Key параметр пустой',
+        s3_params: s3Params,
+        file_data: file
+      });
+    }
+
+    console.log('ВЫЗОВ S3.getObject...');
+    
+    // Получаем файл из S3
+    const s3Object = await s3.getObject(s3Params).promise();
+
+    console.log('ФАЙЛ УСПЕШНО ПОЛУЧЕН ИЗ S3');
+
+    // Устанавливаем заголовки
+    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
     res.setHeader('Content-Length', file.size);
-    res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Disposition', `attachment; filename="${file.originalName || file.filename}"`);
+    
+    console.log('ОТПРАВКА ФАЙЛА КЛИЕНТУ...');
     
     // Отправляем файл
     res.send(s3Object.Body);
 
   } catch (error) {
-    console.error('Ошибка прямого скачивания:', error);
+    console.error('ОШИБКА СКАЧИВАНИЯ:', error);
+    console.error('Детали ошибки:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     
-    if (error.code === 'NoSuchKey') {
-      return res.status(404).json({ error: 'Файл не найден в хранилище' });
+    if (error.code === 'MissingRequiredParameter') {
+      // ДОПОЛНИТЕЛЬНАЯ ДИАГНОСТИКА
+      console.log('ДОПОЛНИТЕЛЬНАЯ ДИАГНОСТИКА ДЛЯ MissingRequiredParameter:');
+      
+      // Проверим файл еще раз
+      const fileId = req.params.id;
+      const file = await File.findById(fileId);
+      console.log('ПОВТОРНАЯ ПРОВЕРКА ФАЙЛА:', file);
+      
+      return res.status(500).json({ 
+        error: 'S3 параметры не заполнены',
+        details: 'Параметр Key не передается в S3',
+        debug: {
+          fileId: fileId,
+          fileKey: file ? file.fileKey : 'file not found',
+          bucket: file ? file.bucket : 'file not found'
+        }
+      });
     }
     
-    res.status(500).json({ error: 'Ошибка при скачивании файла' });
+    res.status(500).json({ 
+      error: 'Ошибка при скачивании файла',
+      details: error.message
+    });
   }
 };
 
@@ -173,9 +246,55 @@ exports.deleteFile = async (req, res) => {
         filename: file.filename
       }
     });
-  } 
-  catch (error) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Диагностика преобразования полей
+// exports.debugFieldConversion = async (req, res) => {
+//   try {
+//     const fileId = req.params.id;
+//     console.log('ДИАГНОСТИКА ПРЕОБРАЗОВАНИЯ ПОЛЕЙ ДЛЯ ID:', fileId);
+    
+//     // 1. Прямой запрос к Supabase
+//     const supabase = require('../config/supabase');
+//     const { data: rawFile, error } = await supabase
+//       .from('files')
+//       .select('*')
+//       .eq('id', fileId)
+//       .single();
+
+//     if (error) throw error;
+    
+//     console.log('СЫРЫЕ ДАННЫЕ ИЗ SUPABASE:');
+//     console.log(JSON.stringify(rawFile, null, 2));
+
+//     // 2. Через модель File
+//     console.log('ДАННЫЕ ЧЕРЕЗ МОДЕЛЬ File:');
+//     const modelFile = await File.findById(fileId);
+//     console.log(JSON.stringify(modelFile, null, 2));
+
+//     // 3. Сравнение
+//     console.log('СРАВНЕНИЕ:');
+//     console.log('file_key (Supabase):', rawFile.file_key);
+//     console.log('fileKey (Model):', modelFile ? modelFile.fileKey : 'UNDEFINED');
+
+//     res.json({
+//       message: 'Диагностика преобразования полей',
+//       supabase_raw: rawFile,
+//       model_converted: modelFile,
+//       comparison: {
+//         file_key: rawFile.file_key,
+//         fileKey: modelFile ? modelFile.fileKey : 'UNDEFINED',
+//         match: rawFile.file_key === (modelFile ? modelFile.fileKey : null)
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Ошибка диагностики:', error);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
 exports.uploadMiddleware = upload;
