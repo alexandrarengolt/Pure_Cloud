@@ -25,5 +25,5 @@ router.delete('/api/:id', async (req, res) => {
 
 module.exports = router; 
 
-// //скачивание файла
-// router.get('/files/:id/download', fileController.downloadFile);
+//скачивание файла
+router.get('/files/:id/download', fileController.downloadFile);

@@ -67,6 +67,43 @@ exports.getFiles = async (req, res) => {
   }
 };
 
+//скачивание файла
+exports.downloadFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Находим файл в БД
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+
+    // Параметры для получения файла из S3
+    const params = {
+      Bucket: file.bucket,
+      Key: file.fileKey
+    };
+
+    const s3Object = await s3.getObject(params).promise();
+
+    res.setHeader('Content-Type', file.mimetype);
+    res.setHeader('Content-Length', file.size);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    res.send(s3Object.Body);
+
+  } catch (error) {
+    console.error('Ошибка скачивания:', error);
+    
+    if (error.code === 'NoSuchKey') {
+      return res.status(404).json({ error: 'Файл не найден в хранилище' });
+    }
+    
+    res.status(500).json({ error: 'Ошибка при скачивании файла' });
+  }
+};
+
 exports.uploadMiddleware = upload;
 
 
