@@ -173,8 +173,8 @@ exports.deleteFile = async (req, res) => {
         filename: file.filename
       }
     });
-    res.status(200).json({ message: 'Файл успешно удален' });
-  } catch (error) {
+  } 
+  catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
