@@ -67,7 +67,8 @@ exports.getFiles = async (req, res) => {
   }
 };
 
-//скачивание файла
+
+// скачивание файла
 exports.downloadFile = async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -78,10 +79,10 @@ exports.downloadFile = async (req, res) => {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    // Генерируем signed URL для скачивания
+    //генерируем signed URL для скачивания
     const signedUrl = await s3.getSignedUrlPromise('getObject', {
       Bucket: file.bucket,
-      Key: file.fileKey, // Исправлено: было file.file_key
+      Key: file.fileKey,
       Expires: 3600 // 1 час
     });
 

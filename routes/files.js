@@ -15,16 +15,16 @@ router.get('/test', (req, res) => {
 //удаление файла -
 router.delete('/files/:id', fileController.deleteFile);
 
-router.delete('/api/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
+// router.delete('/api/:id', async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    await deleteFile(id); 
-    res.status(200).json({ message: 'Файл успешно удален' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+//     await deleteFile(id); 
+//     res.status(200).json({ message: 'Файл успешно удален' });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 module.exports = router; 
 
