@@ -69,6 +69,41 @@ exports.getFiles = async (req, res) => {
 
 
 // скачивание файла
+exports.downloadFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Находим файл в БД
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+
+    //возвращаем signed URL
+    const signedUrl = await s3.getSignedUrlPromise('getObject', {
+      Bucket: file.bucket,
+      Key: file.fileKey,
+      Expires: 3600 // 1 час
+    });
+
+    res.json({
+      message: 'Ссылка для скачивания готова',
+      downloadUrl: signedUrl,
+      directDownloadUrl: `/api/files/${fileId}/direct-download`, //добавляем прямую ссылку
+      file: {
+        id: file.id,
+        filename: file.filename,
+        size: file.size,
+        originalName: file.originalName
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка скачивания:', error);
+    res.status(500).json({ error: 'Ошибка при скачивании файла' });
+  }
+};
+
+//прямое скачивание файла
 exports.directDownload = async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -78,18 +113,19 @@ exports.directDownload = async (req, res) => {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    //получаем файл из S3
+    // Получаем файл из S3
     const s3Object = await s3.getObject({
       Bucket: file.bucket,
       Key: file.fileKey
     }).promise();
 
-    //устанавливаем заголовки для скачивания
+    // Устанавливаем заголовки для скачивания
     res.setHeader('Content-Type', file.mimetype);
     res.setHeader('Content-Length', file.size);
     res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
     res.setHeader('Cache-Control', 'no-cache');
     
+    // Отправляем файл
     res.send(s3Object.Body);
 
   } catch (error) {

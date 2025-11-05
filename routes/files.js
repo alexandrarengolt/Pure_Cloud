@@ -5,6 +5,7 @@ const fileController = require('../controllers/fileController');
 router.post('/upload', fileController.uploadMiddleware, fileController.uploadFile);
 
 //скачивание файла
+router.get('/files/:id/download', fileController.downloadFile);
 router.get('/files/:id/direct-download', fileController.directDownload); 
 
 router.get('/files', fileController.getFiles);
