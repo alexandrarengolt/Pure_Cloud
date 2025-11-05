@@ -72,40 +72,34 @@ exports.downloadFile = async (req, res) => {
   try {
     const fileId = req.params.id;
     
-    // Находим файл в БД
+    //Находим файл в БД
     const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    // Параметры для получения файла из S3
-    const params = {
+    //генерируем signed URL для скачивания
+    const s3 = require('../config/s3');
+    const signedUrl = await s3.getSignedUrlPromise('getObject', {
       Bucket: file.bucket,
-      Key: file.fileKey
-    };
+      Key: file.file_key,
+      Expires: 3600 //1 час
+    });
 
-    const s3Object = await s3.getObject(params).promise();
-
-    res.setHeader('Content-Type', file.mimetype);
-    res.setHeader('Content-Length', file.size);
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
-    res.setHeader('Cache-Control', 'no-cache');
-    
-    res.send(s3Object.Body);
-
+    res.json({
+      message: 'Ссылка для скачивания готова',
+      downloadUrl: signedUrl,
+      file: {
+        id: file.id,
+        filename: file.filename,
+        size: file.size
+      }
+    });
   } catch (error) {
     console.error('Ошибка скачивания:', error);
-    
-    if (error.code === 'NoSuchKey') {
-      return res.status(404).json({ error: 'Файл не найден в хранилище' });
-    }
-    
     res.status(500).json({ error: 'Ошибка при скачивании файла' });
   }
 };
-
-exports.uploadMiddleware = upload;
-
 
 //удаление файла
 exports.deleteFile = async (req, res) => {
@@ -146,39 +140,3 @@ exports.deleteFile = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// //скачивание файла
-// exports.downloadFile = async (req, res) => {
-//   try {
-//     const fileId = req.params.id;
-    
-//     //находим файл в БД
-//     const file = await File.findById(fileId);
-//     if (!file) {
-//       return res.status(404).json({ error: 'Файл не найден' });
-//     }
-
-//     //генерируем signed URL для скачивания
-//     const s3 = require('../config/s3');
-//     const signedUrl = await s3.getSignedUrlPromise('getObject', {
-//       Bucket: file.bucket,
-//       Key: file.file_key,
-//       Expires: 3600 //действует 1 час
-//     });
-
-//     res.json({
-//       message: 'Ссылка для скачивания готова',
-//       downloadUrl: signedUrl,
-//       file: {
-//         id: file.id,
-//         filename: file.filename,
-//         size: file.size
-//       }
-//     });
-//   } catch (error) {
-//     console.error('Ошибка скачивания:', error);
-//     res.status(500).json({ error: 'Ошибка при скачивании файла' });
-//   }
-// };
-
-
