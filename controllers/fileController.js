@@ -68,7 +68,7 @@ exports.getFiles = async (req, res) => {
 };
 
 
-// скачивание файла
+// скачивание файла через ссылку
 exports.downloadFile = async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -108,19 +108,13 @@ exports.directDownload = async (req, res) => {
   try {
     const fileId = req.params.id;
     
-    // Получаем файл через модель
+    //получаем файл через модель
     const file = await File.findById(fileId);
     if (!file) {
       return res.status(404).json({ error: 'Файл не найден в БД' });
     }
 
-    // console.log('ДАННЫЕ ИЗ МОДЕЛИ File.findById:');
-    // console.log('file объект:', JSON.stringify(file, null, 2));
-    // console.log('fileKey значение:', file.fileKey);
-    // console.log('fileKey тип:', typeof file.fileKey);
-    // console.log('fileKey существует?:', !!file.fileKey);
-
-    // ДЕТАЛЬНАЯ ПРОВЕРКА КАЖДОГО ПОЛЯ
+    //проверка полей
     if (!file.fileKey) {
       console.log('fileKey отсутствует в объекте');
       return res.status(500).json({ 
@@ -137,7 +131,7 @@ exports.directDownload = async (req, res) => {
       });
     }
 
-    // ПОДГОТОВКА ПАРАМЕТРОВ ДЛЯ S3
+    //подготовка параметров
     const s3Params = {
       Bucket: file.bucket,
       Key: file.fileKey
@@ -150,7 +144,7 @@ exports.directDownload = async (req, res) => {
     console.log('Key тип:', typeof s3Params.Key);
     console.log('Key длина:', s3Params.Key ? s3Params.Key.length : 0);
 
-    // Проверим, что Key не пустой
+    //проверка key
     if (!s3Params.Key || s3Params.Key.trim() === '') {
       console.log('КРИТИЧЕСКАЯ ОШИБКА: Key пустой в s3Params');
       return res.status(500).json({
@@ -162,19 +156,17 @@ exports.directDownload = async (req, res) => {
 
     console.log('ВЫЗОВ S3.getObject...');
     
-    // Получаем файл из S3
     const s3Object = await s3.getObject(s3Params).promise();
 
     console.log('ФАЙЛ УСПЕШНО ПОЛУЧЕН ИЗ S3');
 
-    // Устанавливаем заголовки
     res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
     res.setHeader('Content-Length', file.size);
     res.setHeader('Content-Disposition', `attachment; filename="${file.originalName || file.filename}"`);
     
     console.log('ОТПРАВКА ФАЙЛА КЛИЕНТУ...');
     
-    // Отправляем файл
+    //отправление файла
     res.send(s3Object.Body);
 
   } catch (error) {
@@ -185,11 +177,9 @@ exports.directDownload = async (req, res) => {
       stack: error.stack
     });
     
+    //дополнительная диагностика
     if (error.code === 'MissingRequiredParameter') {
-      // ДОПОЛНИТЕЛЬНАЯ ДИАГНОСТИКА
       console.log('ДОПОЛНИТЕЛЬНАЯ ДИАГНОСТИКА ДЛЯ MissingRequiredParameter:');
-      
-      // Проверим файл еще раз
       const fileId = req.params.id;
       const file = await File.findById(fileId);
       console.log('ПОВТОРНАЯ ПРОВЕРКА ФАЙЛА:', file);
@@ -212,6 +202,7 @@ exports.directDownload = async (req, res) => {
   }
 };
 
+
 //удаление файла
 exports.deleteFile = async (req, res) => {
   try {
@@ -227,7 +218,7 @@ exports.deleteFile = async (req, res) => {
     const s3 = require('../config/s3');
     await s3.deleteObject({
       Bucket: file.bucket,
-      Key: file.file_key
+      Key: file.fileKey
     }).promise();
 
     //удаляем файл из Supabase
@@ -251,50 +242,48 @@ exports.deleteFile = async (req, res) => {
   }
 };
 
-// Диагностика преобразования полей
-// exports.debugFieldConversion = async (req, res) => {
-//   try {
-//     const fileId = req.params.id;
-//     console.log('ДИАГНОСТИКА ПРЕОБРАЗОВАНИЯ ПОЛЕЙ ДЛЯ ID:', fileId);
+
+//диагностика преобразования полей
+exports.debugFieldConversion = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    console.log('ДИАГНОСТИКА ПРЕОБРАЗОВАНИЯ ПОЛЕЙ ДЛЯ ID:', fileId);
     
-//     // 1. Прямой запрос к Supabase
-//     const supabase = require('../config/supabase');
-//     const { data: rawFile, error } = await supabase
-//       .from('files')
-//       .select('*')
-//       .eq('id', fileId)
-//       .single();
+    const supabase = require('../config/supabase');
+    const { data: rawFile, error } = await supabase
+      .from('files')
+      .select('*')
+      .eq('id', fileId)
+      .single();
 
-//     if (error) throw error;
+    if (error) throw error;
     
-//     console.log('СЫРЫЕ ДАННЫЕ ИЗ SUPABASE:');
-//     console.log(JSON.stringify(rawFile, null, 2));
+    console.log('СЫРЫЕ ДАННЫЕ ИЗ SUPABASE:');
+    console.log(JSON.stringify(rawFile, null, 2));
 
-//     // 2. Через модель File
-//     console.log('ДАННЫЕ ЧЕРЕЗ МОДЕЛЬ File:');
-//     const modelFile = await File.findById(fileId);
-//     console.log(JSON.stringify(modelFile, null, 2));
+    console.log('ДАННЫЕ ЧЕРЕЗ МОДЕЛЬ File:');
+    const modelFile = await File.findById(fileId);
+    console.log(JSON.stringify(modelFile, null, 2));
 
-//     // 3. Сравнение
-//     console.log('СРАВНЕНИЕ:');
-//     console.log('file_key (Supabase):', rawFile.file_key);
-//     console.log('fileKey (Model):', modelFile ? modelFile.fileKey : 'UNDEFINED');
+    console.log('СРАВНЕНИЕ:');
+    console.log('file_key (Supabase):', rawFile.file_key);
+    console.log('fileKey (Model):', modelFile ? modelFile.fileKey : 'UNDEFINED');
 
-//     res.json({
-//       message: 'Диагностика преобразования полей',
-//       supabase_raw: rawFile,
-//       model_converted: modelFile,
-//       comparison: {
-//         file_key: rawFile.file_key,
-//         fileKey: modelFile ? modelFile.fileKey : 'UNDEFINED',
-//         match: rawFile.file_key === (modelFile ? modelFile.fileKey : null)
-//       }
-//     });
+    res.json({
+      message: 'Диагностика преобразования полей',
+      supabase_raw: rawFile,
+      model_converted: modelFile,
+      comparison: {
+        file_key: rawFile.file_key,
+        fileKey: modelFile ? modelFile.fileKey : 'UNDEFINED',
+        match: rawFile.file_key === (modelFile ? modelFile.fileKey : null)
+      }
+    });
 
-//   } catch (error) {
-//     console.error('Ошибка диагностики:', error);
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+  } catch (error) {
+    console.error('Ошибка диагностики:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 exports.uploadMiddleware = upload;
