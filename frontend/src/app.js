@@ -11,7 +11,7 @@ async function initApp() {
         console.log('Запуск Pure Cloud...');
         
         // Подключение к серверу
-        const response = await fetch(API_BASE + '/');
+        const response = await fetch(API_BASE + '/test');
         if (!response.ok) {
             throw new Error('Сервер не отвечает');
         }
@@ -122,8 +122,8 @@ async function uploadFile() {
         
         if (response.ok) {
             alert('Файл успешно загружен!');
-            fileInput.value = ''; // Очищаем input
-            await loadFiles(); // Обновляем список
+            fileInput.value = ''; 
+            await loadFiles(); 
         } else {
             alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
         }
