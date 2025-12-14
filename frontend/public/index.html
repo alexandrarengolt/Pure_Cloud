@@ -1,30 +1,43 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pure Cloud</title>
-    <link rel="stylesheet" href="/src/styles/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <div id="app">
-        <div class="loading">
-            <i class="fas fa-cloud fa-spin"></i>
-            <p>Загрузка Pure Cloud...</p>
-        </div>
-        <div id="main-content" style="display: none;">
-            <div class="upload-section">
-                <input type="file" id="fileInput">
-                <button onclick="uploadFile()">📤 Загрузить файл</button>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pure Cloud</title>
+        <link rel="stylesheet" href="/src/styles/main.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body>
+        <div id="app">
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-cloud">
+                        </i>
+                        <h1>Pure Cloud</h1>
+                    </div>
+                    <div class="user-info">
+                        <span>Добро пожаловать!</span>
+                    </div>
+                </div>
+            </header>
+            <div class="loading">
+                <i class="fas fa-cloud fa-spin">
+                </i>
+                <p>Загрузка Pure Cloud...</p>
             </div>
-            <h3>📁 Ваши файлы:</h3>
-            <div id="fileList">
-                <p>Загрузка списка файлов...</p>
+            <div id="main-content" style="display: none;">
+                <div class="upload-section">
+                    <input type="file" id="fileInput">
+                    <button onclick="uploadFile()">📤 Загрузить файл</button>
+                </div>
+                <h3>📁 Ваши файлы:</h3>
+                <div id="fileList">
+                    <p>Загрузка списка файлов...</p>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <script src="/src/app.js"></script>
-</body>
+        <script src="/src/app.js">
+        </script>
+    </body>
 </html>
