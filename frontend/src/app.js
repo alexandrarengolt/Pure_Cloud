@@ -174,3 +174,9 @@ async function deleteFile(fileId) {
         alert('Ошибка удаления файла');
     }
 }
+// Запуск
+document.addEventListener('DOMContentLoaded', initApp);
+
+window.uploadFile = uploadFile;
+window.downloadFile = downloadFile;
+window.deleteFile = deleteFile;
